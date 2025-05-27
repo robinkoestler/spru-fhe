@@ -4,7 +4,7 @@ import numpy as np
 load("sagefhepoly/polyfhe.sage")
 load("FHE_DFT_class.sage")
 
-class LOLA:
+class SPRU:
     @classmethod
     def setup(cls, N, slots, modulus, precision=53, kappa=2, h=2):
         cls.N = N
@@ -40,7 +40,7 @@ class LOLA:
         cls.s_in_blocks = [cls.block_slice(cls.s, i) for i in range(2*cls.n)]
         cls.s_in_blocks = [cls.Encoder.encode_clear(i, modulus=0) for i in cls.s_in_blocks]
         cls.s = Poly(cls.s, 0)
-        cls.s_block_enc = [LOLA.encrypt(i, cls.q_L) for i in cls.s_in_blocks]
+        cls.s_block_enc = [SPRU.encrypt(i, cls.q_L) for i in cls.s_in_blocks]
         cls.boot_delta = ZZ(round(cls.delta * ((cls.q * cls.n / (pi * 4 * cls.delta)) ** (1 / cls.h))))
         
     @classmethod
@@ -48,17 +48,17 @@ class LOLA:
         assert hasattr(cls, "s"), "secret key not generated"
         # the evaluation key for ciphertext multiplication, encrypting s^2
         evk = Poly(((cls.s % cls.Pq_L) ** 2) * cls.q_L, cls.q_L)
-        cls.evk = LOLA.encrypt(evk, cls.Pq_L)
+        cls.evk = SPRU.encrypt(evk, cls.Pq_L)
         
         # we generate the keyswitching keys for the automorphisms of powers of 2, with pos. and neg. sign
         cls.ksk = {}
         for index in [1 << i for i in range(cls.N.bit_length()-2)]:
             for j in range(-1, 2, 2): # j = -1, 1
                 newkey = Poly((cls.s.auto(index * j) * cls.q_L) % cls.Pq_L, cls.Pq_L)
-                cls.ksk[str(index * j)] = LOLA.encrypt(newkey, cls.Pq_L)
+                cls.ksk[str(index * j)] = SPRU.encrypt(newkey, cls.Pq_L)
         # ...and for the conjugation automorphism        
         newkey =  Poly((cls.s.auto_inverse() * cls.q_L) % cls.Pq_L, cls.Pq_L)
-        cls.ksk_conj = LOLA.encrypt(newkey, cls.Pq_L)
+        cls.ksk_conj = SPRU.encrypt(newkey, cls.Pq_L)
         
     ## INIT    
         
@@ -68,24 +68,24 @@ class LOLA:
     # ARITHMETIC OPERATIONS
 
     def __add__(self, other):
-        if isinstance(other, Poly): return LOLA([self.a, self.b + other])
-        return LOLA([self.a + other.a, self.b + other.b])
+        if isinstance(other, Poly): return SPRU([self.a, self.b + other])
+        return SPRU([self.a + other.a, self.b + other.b])
      
-    def __neg__(self): return LOLA([-self.a, -self.b])
+    def __neg__(self): return SPRU([-self.a, -self.b])
 
     def __sub__(self, other):
-        if isinstance(other, Poly): return LOLA([self.a, self.b - other])
-        return LOLA([self.a - other.a, self.b - other.b])
+        if isinstance(other, Poly): return SPRU([self.a, self.b - other])
+        return SPRU([self.a - other.a, self.b - other.b])
 
 
     def __mul__(self, other):
-        if isinstance(other, LOLA):
+        if isinstance(other, SPRU):
             assert self.a.modulus == other.a.modulus, f"Moduli must be the same (and = {self.q})"    
             d0 = (self.a * other.a) % self.Pq_L
             d1 = self.a * other.b + self.b * other.a
             d2 = self.b * other.b
             d0 = (self.evk * d0).scale(self.q_L) % d1.modulus
-            return (LOLA([d1, d2]) + d0)
+            return (SPRU([d1, d2]) + d0)
         assert not isinstance(other, int), "int multiplication not implemented"
         
         m1, m2 = self.modulus, other.modulus # Below, we figure the right modulus to continue
@@ -94,7 +94,7 @@ class LOLA:
         elif m2 != 0 and m1 != 0:
             modulus = min(m1, m2)
             self, other = self % modulus, other % modulus            
-        return LOLA([self.a * other, self.b * other]) 
+        return SPRU([self.a * other, self.b * other]) 
     
     def __radd__(self, other): return self + other
     def __rsub__(self, other): return self - other
@@ -102,12 +102,12 @@ class LOLA:
     def __rmod__(self, modulus): return self % modulus
     
     def __mod__(self, modulus):
-        return LOLA([self.a % modulus, self.b % modulus])
+        return SPRU([self.a % modulus, self.b % modulus])
     
     ## SCALING
     
     def scale(self, other, newmod=True): 
-        return LOLA([self.a.scale(other, newmod=newmod), self.b.scale(other, newmod=newmod)])
+        return SPRU([self.a.scale(other, newmod=newmod), self.b.scale(other, newmod=newmod)])
     
     def __rshift__(self, levels=1): # scales down by levels
         return self.scale(self.delta ** levels, newmod=True)
@@ -115,11 +115,11 @@ class LOLA:
     # AUTOMORPHISM
     
     def auto(self, index):
-        result = LOLA([self.a.auto(index), self.b.auto(index)])
+        result = SPRU([self.a.auto(index), self.b.auto(index)])
         return result.keyswitch(index)
     
     def auto_inverse(self):
-        result = LOLA([self.a.auto_inverse(), self.b.auto_inverse()])
+        result = SPRU([self.a.auto_inverse(), self.b.auto_inverse()])
         return result.keyswitch(conj=True)
     
     def keyswitch(self, index=1, conj=False):
@@ -136,7 +136,7 @@ class LOLA:
         a = Poly.random(modulus=modulus)
         error = np.sum(np.random.binomial(1, 0.5, size=(cls.N, 2*cls.kappa)), axis=1) 
         e = Poly((error - cls.kappa).astype(int), modulus)
-        return LOLA([a, -a * (cls.s % modulus) + e + (message % modulus)])
+        return SPRU([a, -a * (cls.s % modulus) + e + (message % modulus)])
     
     def decrypt(self, modulus = None):
         q = modulus if modulus else self.modulus
@@ -148,7 +148,7 @@ class LOLA:
     def modulus(self): return self.a.modulus
     
     def monomial_shift(self, shift):
-        return LOLA([self.a.monomial_shift(shift), self.b.monomial_shift(shift)])
+        return SPRU([self.a.monomial_shift(shift), self.b.monomial_shift(shift)])
     
     def __repr__(self) -> str:
         return f"{self.a % self.modulus},\n{self.b % self.modulus}"

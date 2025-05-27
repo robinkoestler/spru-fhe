@@ -1,7 +1,7 @@
-# LOLA-FHE: Fast FHE Implementation of LOLA (Low latency CKKS bootstrapping for few slots)
+# SPRU-FHE: Fast FHE Implementation of SPRU (Sparse Roots of Unity CKKS bootstrapping for few slots)
 
 This repository contains implementations of Fully Homomorphic Encryption (FHE) schemes in SageMath.
-It serves as a proof-of-concept implementation for the paper "Low latency bootstrapping for CKKS using Roots of Unity" by Coron & Köstler see [LOLA paper](https://eprint.iacr.org/2025/651).
+It serves as a proof-of-concept implementation for the paper "Low latency bootstrapping for CKKS using Roots of Unity" by Coron & Köstler see [SPRU paper](https://eprint.iacr.org/2025/651).
 For comparison, we also provide an implementation of the CKKS scheme using the same SageMath framework.
 The code provides efficient implementations for both clear-text and homomorphic DFT operations (SlotToCoeff and CoeffToSlot), along with bootstrapping capabilities for FHE schemes.
 
@@ -9,8 +9,8 @@ The code provides efficient implementations for both clear-text and homomorphic 
 
 - `DFT_class.sage`: Implementation of the Fast DFT module for clear-text operations
 - `FHE_DFT_class.sage`: Homomorphic DFT implementation for FHE operations
-- `lola.ipynb`: Implementation and testing of bootstrapping for the LOLA scheme
-- `lola.sage`: SageMath file for imports
+- `spru.ipynb`: Implementation and testing of bootstrapping for the SPRU scheme
+- `spru.sage`: SageMath file for imports
 - `ckks.ipynb`: Implementation and testing of bootstrapping for CKKS scheme
 - `ckks.sage`: SageMath file for imports
 - `fastDFT.ipynb`: Notebook generating and testing the Fast DFT implementation, it can write the .sage files
@@ -21,7 +21,7 @@ The code provides efficient implementations for both clear-text and homomorphic 
 
 - Fast DFT implementation with both normal and bit-reversed order operations
 - Homomorphic DFT operations for FHE schemes, without the radix decomposition
-- Bootstrapping implementations for both the LOLA and the CKKS scheme
+- Bootstrapping implementations for both the SPRU and the CKKS scheme
 - Runtimes (for few slots) and ring dimension 2^15 are in the order of seconds
 - Efficient polynomial arithmetic in the ring Z_q[X]/(X^N+1) through the submodule `sagefhepoly/`
 - Support for various precision levels and parameter configurations
