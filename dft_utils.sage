@@ -1,6 +1,6 @@
 def root(index, exponent = None, precision: int = 53):
     # Calculate the primitive index-th root of unity. Using SageMath's zeta function for efficiency.
-    if exponent:
+    if exponent != None:
         exponent %= index
         return ComplexField(precision).zeta(index) ** exponent
     return ComplexField(precision).zeta(index)
